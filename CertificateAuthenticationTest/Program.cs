@@ -1,6 +1,9 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using CertificateAuthenticationTest.Handlers;
+using CertificateAuthenticationTest.Requirements;
 using Microsoft.AspNetCore.Authentication.Certificate;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,17 +34,22 @@ builder
         // Disabled revocation checks since test certificates do not have CRL.
         options.RevocationMode = X509RevocationMode.NoCheck;
     });
-builder
-    .Services.AddAuthorizationBuilder()
-    .AddFallbackPolicy(
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(
         "RequireAuthenticatedUser",
         authorizationPolicyBuilder => authorizationPolicyBuilder.RequireAuthenticatedUser()
     );
+    options.AddPolicy(
+        "IsTestUser",
+        policy => policy.AddRequirements(new SubjectNameRequirement("Test User"))
+    );
+});
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddSingleton<IAuthorizationHandler, SubjectNameHandler>();
 
 var app = builder.Build();
 
@@ -59,6 +67,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/", () => "Hello world.\n");
+app.MapGet("/", () => "Hello world.\n")
+    .RequireAuthorization("RequireAuthenticatedUser")
+    .RequireAuthorization("IsTestUser");
 
 app.Run();
