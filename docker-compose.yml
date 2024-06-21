@@ -1,0 +1,16 @@
+﻿services:
+  cat-app:
+    image: certificateauthenticationtest
+    build:
+      context: .
+      dockerfile: CertificateAuthenticationTest/Dockerfile
+  nginx:
+    image: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/key.pem:/root/ssl/key.pem
+      - ./nginx/cert.pem:/root/ssl/cert.pem
+    ports:
+      - "443:443"
+    depends_on:
+      - cat-app
