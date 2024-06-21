@@ -1,7 +1,25 @@
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Authentication.Certificate;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+});
+
+
+builder.Services.AddCertificateForwarding(options =>
+{
+    options.CertificateHeader = "X-SSL-CERT";
+    options.HeaderConverter = headerValue =>
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(headerValue);
+        return X509Certificate2.CreateFromPem(WebUtility.UrlDecode(headerValue));
+    };
+});
 
 builder.Services.AddAuthentication(CertificateAuthenticationDefaults.AuthenticationScheme).AddCertificate(
     options =>
@@ -10,7 +28,8 @@ builder.Services.AddAuthentication(CertificateAuthenticationDefaults.Authenticat
         options.ChainTrustValidationMode = X509ChainTrustMode.CustomRootTrust;
         options.CustomTrustStore = [X509Certificate2.CreateFromPemFile("./ca.crt")];
         options.RevocationFlag = X509RevocationFlag.EntireChain;
-        options.RevocationMode = X509RevocationMode.Online;
+        // Disabled revocation checks since test certificates do not have CRL.
+        options.RevocationMode = X509RevocationMode.NoCheck;
     });
 builder.Services.AddAuthorizationBuilder().AddFallbackPolicy("RequireAuthenticatedUser", authorizationPolicyBuilder => authorizationPolicyBuilder.RequireAuthenticatedUser());
 
@@ -20,6 +39,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
+
+app.UseCertificateForwarding();
 
 app.UseAuthentication();
 app.UseAuthorization();
