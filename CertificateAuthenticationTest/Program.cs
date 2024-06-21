@@ -34,17 +34,16 @@ builder
         // Disabled revocation checks since test certificates do not have CRL.
         options.RevocationMode = X509RevocationMode.NoCheck;
     });
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy(
+builder
+    .Services.AddAuthorizationBuilder()
+    .AddPolicy(
         "RequireAuthenticatedUser",
         authorizationPolicyBuilder => authorizationPolicyBuilder.RequireAuthenticatedUser()
-    );
-    options.AddPolicy(
+    )
+    .AddPolicy(
         "IsTestUser",
         policy => policy.AddRequirements(new SubjectNameRequirement("Test User"))
     );
-});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
