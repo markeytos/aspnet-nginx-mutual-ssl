@@ -8,8 +8,9 @@ builder.Services.AddAuthentication(CertificateAuthenticationDefaults.Authenticat
     {
         options.AllowedCertificateTypes = CertificateTypes.All;
         options.ChainTrustValidationMode = X509ChainTrustMode.CustomRootTrust;
-        options.CustomTrustStore = [X509Certificate2.CreateFromPemFile("./cert.pem")];
+        options.CustomTrustStore = [X509Certificate2.CreateFromPemFile("./ca.crt")];
         options.RevocationFlag = X509RevocationFlag.EntireChain;
+        options.RevocationMode = X509RevocationMode.Online;
     });
 builder.Services.AddAuthorizationBuilder().AddFallbackPolicy("RequireAuthenticatedUser", authorizationPolicyBuilder => authorizationPolicyBuilder.RequireAuthenticatedUser());
 

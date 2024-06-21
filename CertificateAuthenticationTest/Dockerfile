@@ -19,6 +19,7 @@ RUN dotnet publish "CertificateAuthenticationTest.csproj" -c $BUILD_CONFIGURATIO
 
 FROM base AS final
 WORKDIR /app
-COPY ["CertificateAuthenticationTest/cert.pem", "./cert.pem"]
+COPY ["nginx/ca.crt", "./ca.crt"]
+COPY ["nginx/server.crt", "./server.crt"]
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "CertificateAuthenticationTest.dll"]
